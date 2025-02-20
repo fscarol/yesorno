@@ -1,39 +1,40 @@
-import { useState } from 'react';
+import { useState, useRef } from 'react';
 
 import './YesOrNo.css';
 
 const API_URL = 'https://yesno.wtf/api';
 
 export default function YesOrNo() {
-  const answerText = document.querySelector('#answer');
-  const answerBox = document.querySelector('#answerBox');
-  const questionEl = document.querySelector('#question');
   const [isBtnEnabled, setBtnEnabled] = useState(true);
+  const [answerBoxClass, setAnswerBoxClass] = useState('');
+  const [answer, setAnswer] = useState('');
+
+  const questionElRef = useRef<HTMLInputElement>(null);
 
   async function fetchAnswer() {
+    const questionEl = questionElRef.current;
+
     if (
-      !answerText ||
-      !answerBox ||
       !questionEl ||
-      (questionEl as HTMLInputElement).value === ''
+      questionEl.value === ''
     )
       return;
-    answerBox.classList.remove('before:bg-green-500', 'before:bg-red-800');
+      setAnswerBoxClass('');
 
-    answerText.textContent = '...';
+    setAnswer('...');
     setBtnEnabled(false);
 
     await fetch(API_URL).then((response) => {
       if (!response.ok) {
-        answerText.textContent = 'Dunno';
+        setAnswer('Dunno');
       }
       response.json().then((data) => {
-        answerText.textContent = data.answer;
+        setAnswer(data.answer);
 
         if (data.answer === 'yes') {
-          answerBox.classList.add('before:bg-green-500');
+          setAnswerBoxClass('before:bg-green-500');
         } else if (data.answer === 'no') {
-          answerBox.classList.add('before:bg-red-800');
+          setAnswerBoxClass('before:bg-red-800');
         }
       });
       clearAnswer();
@@ -42,11 +43,12 @@ export default function YesOrNo() {
   }
 
   function clearAnswer() {
-    if (!answerText || !answerBox) return;
+
+    if (!answer) return;
     setTimeout(() => {
-      if (answerText) {
-        answerBox.classList.remove('before:bg-green-500', 'before:bg-red-800');
-        answerText.textContent = '';
+      if (answer) {
+        setAnswerBoxClass('');
+        setAnswer('');
       }
     }, 5000);
   }
@@ -69,6 +71,7 @@ export default function YesOrNo() {
           className="border-2 border-red-50 rounded px-2 py-1 focus:outline-hidden font-sans"
           id="question"
           type="text"
+          ref={questionElRef}
           onKeyDown={handleKeyEnter}
         />
         <button
@@ -80,9 +83,9 @@ export default function YesOrNo() {
       </form>
 
       <span
-        className="text-4xl relative inline-block before:absolute before:-inset-1 before:block before:-skew-y-3"
+        className={`text-4xl relative inline-block before:absolute before:-inset-1 before:block before:-skew-y-3 ${answerBoxClass}`}
         id="answerBox">
-        <span className="relative text-white" id="answer"></span>
+        <span className="relative text-white" id="answer">{answer}</span>
       </span>
     </main>
   );
